@@ -1,2 +1,4 @@
 "Test message for initializing repository" 
 "Uploading all files..." 
+"test msg" 
+"testing text" 
