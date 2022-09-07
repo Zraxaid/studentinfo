@@ -1,10 +1,8 @@
 import openpyxl
 import os
 import datetime
-
 from openpyxl import styles
 
-# test comment2
 # get the path for the root directory
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -32,13 +30,14 @@ class Teacher:
 
 
 class Student:
-    def __init__(self, name, subject, parent, credit):
+    def __init__(self, name, subject, parent, credit, time_of_week):
         self.name = name
         self.subject = subject
         self.classes = []
         self.class_num = 0
         self.parent = parent
         self.credit = credit
+        self.time_of_week = time_of_week
 
     def add_class(self, date):
         self.class_num += 1
@@ -107,9 +106,10 @@ def assign_students(working_sheet, teacher_dict):
         if current_color in teacher_dict.keys():
             # create student with their name, parent, subject, and credit [look to student class __init__]
             new_student = Student(working_sheet.cell(row=i, column=3).value, working_sheet.cell(row=i, column=1).value,
-                                  working_sheet.cell(row=i, column=2).value, working_sheet.cell(row=i, column=4).value)
+                                  working_sheet.cell(row=i, column=2).value, working_sheet.cell(row=i, column=5).value,
+                                  working_sheet.cell(row=i, column=4).value)
             # record current classes
-            for j in range(6, column_num):
+            for j in range(7, column_num):
                 if working_sheet.cell(row=i, column=j).value is not None:
                     date = f"{working_sheet.cell(row=i, column=j).value.month}/{working_sheet.cell(row=i, column=j).value.day}/{working_sheet.cell(row=i, column=j).value.year}"
                     new_student.add_class(date)
