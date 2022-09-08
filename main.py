@@ -122,7 +122,7 @@ def assign_students(working_sheet, teacher_dict):
 
 
 def finished_class(teacher_dictionary, input_teacher):
-    # let user input the student and subject and mark today's class as done and -1 credit
+        # let user input the student and subject and mark today's class as done and -1 credit
     date = f"{datetime.datetime.now().month}/{datetime.datetime.now().day}/{datetime.datetime.now().year}"
     print(f"Today's Date: {date}")
     print_teachers(teacher_dictionary, input_teacher.name)
