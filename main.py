@@ -10,8 +10,7 @@ ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 excel_file = os.path.join(ROOT_DIR, "Student Info.xlsx")
 
 workbook = openpyxl.load_workbook(excel_file)
-sheet = workbook.active
-
+sheet = workbook[workbook.sheetnames[-2]]
 
 class Teacher:
     def __init__(self, name, color):
@@ -30,7 +29,7 @@ class Teacher:
 
 
 class Student:
-    def __init__(self, name, subject, parent, credit, time_of_week):
+    def __init__(self, name, subject, parent, credit, time_of_week, row_num):
         self.name = name
         self.subject = subject
         self.classes = []
@@ -38,8 +37,10 @@ class Student:
         self.parent = parent
         self.credit = credit
         self.time_of_week = time_of_week
+        self.row_num = row_num
 
     def add_class(self, date):
+        #credit - class num
         self.class_num += 1
         self.classes.append(date)
 
@@ -53,6 +54,7 @@ class Student:
 
 
 def print_teachers(teacher_list, choice):
+    #teacher_list is an array of teacher object, choice is a string (either the teachers name or "all")
     if choice == "all":
         for i in teacher_list:
             print(i.name)
@@ -107,12 +109,13 @@ def assign_students(working_sheet, teacher_dict):
             # create student with their name, parent, subject, and credit [look to student class __init__]
             new_student = Student(working_sheet.cell(row=i, column=3).value, working_sheet.cell(row=i, column=1).value,
                                   working_sheet.cell(row=i, column=2).value, working_sheet.cell(row=i, column=5).value,
-                                  working_sheet.cell(row=i, column=4).value)
+                                  working_sheet.cell(row=i, column=4).value, i)
             # record current classes
             for j in range(7, column_num):
                 if working_sheet.cell(row=i, column=j).value is not None:
                     date = f"{working_sheet.cell(row=i, column=j).value.month}/{working_sheet.cell(row=i, column=j).value.day}/{working_sheet.cell(row=i, column=j).value.year}"
                     new_student.add_class(date)
+
                 else:
                     break
             # assign student to their teacher
@@ -131,13 +134,19 @@ def finished_class(teacher_dictionary, input_teacher):
         selected_student = input("Please enter the name of the student: ").lower()
         selected_subject = input("Please enter the student's subject: ").lower()
         for i in input_teacher.students:
+            #confirms the student and the subject
             if i.name.lower() == selected_student and i.subject.lower() == selected_subject:
                 print(f"You selected: {i.name} ({i.subject})")
                 confirm_student = input("Confirm (y/n): ")
                 if confirm_student == "y":
                     confirmed_student = i
     confirmed_student.add_class(date)
-
+    alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    for i in range (7,16):
+        if workbook[workbook.sheetnames[-2]].cell(row=confirmed_student.row_num, column=i).value is None:
+            sheet[alphabet[i-1]+str(confirmed_student.row_num)] = date
+            break
+    workbook.save(filename="Student Info.xlsx")
 
 def operation(teacher_dict):
     # main loop asking for inputs
