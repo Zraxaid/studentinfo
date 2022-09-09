@@ -2,6 +2,7 @@ import openpyxl
 import os
 import datetime
 from openpyxl import styles
+from copy import copy
 
 # get the path for the root directory
 ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -10,7 +11,23 @@ ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 excel_file = os.path.join(ROOT_DIR, "Student Info.xlsx")
 
 workbook = openpyxl.load_workbook(excel_file)
-sheet = workbook[workbook.sheetnames[-2]]
+
+curr_month = datetime.datetime.now().month
+month_ref = {1: "February",
+             2: "March",
+             3: "April",
+             4: "May",
+             5: "June",
+             6: "July",
+             7: "August",
+             8: "September",
+             9: "October",
+             10: "November",
+             11: "December",
+             12: "January",
+             0: "January"}
+curr_sheet = workbook[month_ref[curr_month - 1]]
+
 
 class Teacher:
     def __init__(self, name, color):
@@ -40,7 +57,7 @@ class Student:
         self.row_num = row_num
 
     def add_class(self, date):
-        #credit - class num
+        # credit - class num
         self.class_num += 1
         self.classes.append(date)
 
@@ -54,7 +71,7 @@ class Student:
 
 
 def print_teachers(teacher_list, choice):
-    #teacher_list is an array of teacher object, choice is a string (either the teachers name or "all")
+    # teacher_list is an array of teacher object, choice is a string (either the teachers name or "all")
     if choice == "all":
         for i in teacher_list:
             print(i.name)
@@ -70,7 +87,7 @@ def print_teachers(teacher_list, choice):
 
 def init_teachers(working_sheet):
     column_num = 0
-    dict = []
+    dict1 = []
     dict2 = {}
     # looks for teacher and color cells
     for i in range(1, working_sheet.max_column + 1):
@@ -84,9 +101,9 @@ def init_teachers(working_sheet):
             break
         # get teacher color on excel
         result = working_sheet.cell(row=i, column=column_num + 1).fill.start_color.index
-        dict.append(Teacher(working_sheet.cell(row=i, column=column_num).value, result))
-        dict2[result] = dict[-1]
-    return dict, dict2
+        dict1.append(Teacher(working_sheet.cell(row=i, column=column_num).value, result))
+        dict2[result] = dict1[-1]
+    return dict1, dict2
 
 
 def assign_students(working_sheet, teacher_dict):
@@ -113,9 +130,12 @@ def assign_students(working_sheet, teacher_dict):
             # record current classes
             for j in range(7, column_num):
                 if working_sheet.cell(row=i, column=j).value is not None:
-                    date = f"{working_sheet.cell(row=i, column=j).value.month}/{working_sheet.cell(row=i, column=j).value.day}/{working_sheet.cell(row=i, column=j).value.year}"
-                    new_student.add_class(date)
-
+                    try:
+                        date = f"{working_sheet.cell(row=i, column=j).value.month}/{working_sheet.cell(row=i, column=j).value.day}/{working_sheet.cell(row=i, column=j).value.year}"
+                        new_student.add_class(date)
+                    except:
+                        date= f"{working_sheet.cell(row=i, column=j).value.split('/')[0]}/{working_sheet.cell(row=i, column=j).value.split('/')[1]}/{working_sheet.cell(row=i, column=j).value.split('/')[2]}"
+                        new_student.add_class(date)
                 else:
                     break
             # assign student to their teacher
@@ -124,8 +144,42 @@ def assign_students(working_sheet, teacher_dict):
             print(f"{working_sheet.cell(row=i, column=3).value} has no color")
 
 
+def new_month(entire_sheet):
+    print(month_ref[curr_month])
+    template_sheet = entire_sheet[month_ref[curr_month-1]]
+    entire_sheet.create_sheet(month_ref[curr_month])
+    entire_sheet.save(filename="Student Info.xlsx")
+    current_working_sheet = entire_sheet[month_ref[curr_month]]
+    for i in range(1, template_sheet.max_column + 1):
+        for j in range(1, template_sheet.max_row + 1):
+            current_working_sheet.cell(row=j, column=i).value = template_sheet.cell(row=j, column=i).value
+            if template_sheet.cell(row=j, column=i).has_style:
+                current_working_sheet.cell(row=j, column=i).font = copy(template_sheet.cell(row=j, column=i).font)
+                current_working_sheet.cell(row=j, column=i).border = copy(template_sheet.cell(row=j, column=i).border)
+                current_working_sheet.cell(row=j, column=i).fill = copy(template_sheet.cell(row=j, column=i).fill)
+                current_working_sheet.cell(row=j, column=i).number_format = copy(template_sheet.cell(row=j, column=i).number_format)
+                current_working_sheet.cell(row=j, column=i).protection = copy(template_sheet.cell(row=j, column=i).protection)
+                current_working_sheet.cell(row=j, column=i).alignment = copy(template_sheet.cell(row=j, column=i).alignment)
+    for i in "A B C D E F G H I J K L M N O P Q R S T U V W X Y Z".split(" "):
+        current_working_sheet.column_dimensions[i].width = template_sheet.column_dimensions[i].width
+    for i in range(1, template_sheet.max_row + 1):
+        current_working_sheet.row_dimensions[i].height = template_sheet.row_dimensions[i].height
+    for j in range(2, template_sheet.max_row + 1):
+        current_working_sheet.cell(row=j, column=5).value = template_sheet.cell(row=j, column=6).value
+        current_working_sheet.cell(row=j, column=7).value = None
+        current_working_sheet.cell(row=j, column=8).value = None
+        current_working_sheet.cell(row=j, column=9).value = None
+        current_working_sheet.cell(row=j, column=10).value = None
+        current_working_sheet.cell(row=j, column=11).value = None
+        current_working_sheet.cell(row=j, column=12).value = None
+        current_working_sheet.cell(row=j, column=13).value = None
+        current_working_sheet.cell(row=j, column=14).value = None
+        current_working_sheet.cell(row=j, column=15).value = None
+    entire_sheet.save(filename="Student Info.xlsx")
+
+
 def finished_class(teacher_dictionary, input_teacher):
-        # let user input the student and subject and mark today's class as done and -1 credit
+    # let user input the student and subject and mark today's class as done and -1 credit
     date = f"{datetime.datetime.now().month}/{datetime.datetime.now().day}/{datetime.datetime.now().year}"
     print(f"Today's Date: {date}")
     print_teachers(teacher_dictionary, input_teacher.name)
@@ -134,7 +188,7 @@ def finished_class(teacher_dictionary, input_teacher):
         selected_student = input("Please enter the name of the student: ").lower()
         selected_subject = input("Please enter the student's subject: ").lower()
         for i in input_teacher.students:
-            #confirms the student and the subject
+            # confirms the student and the subject
             if i.name.lower() == selected_student and i.subject.lower() == selected_subject:
                 print(f"You selected: {i.name} ({i.subject})")
                 confirm_student = input("Confirm (y/n): ")
@@ -142,11 +196,32 @@ def finished_class(teacher_dictionary, input_teacher):
                     confirmed_student = i
     confirmed_student.add_class(date)
     alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    for i in range (7,16):
+    for i in range(7, 16):
         if workbook[workbook.sheetnames[-2]].cell(row=confirmed_student.row_num, column=i).value is None:
-            sheet[alphabet[i-1]+str(confirmed_student.row_num)] = date
+            curr_sheet[alphabet[i-1]+str(confirmed_student.row_num)] = date
             break
+        workbook[workbook.sheetnames[-2]].cell(row=confirmed_student.row_num, column=6).value -= 1
     workbook.save(filename="Student Info.xlsx")
+
+
+def add_classes(teacher_dictionary, input_teacher):
+    confirmed_student = None
+    print_teachers(teacher_dictionary, input_teacher.name)
+    while not confirmed_student:
+        selected_student = input("Please enter the name of the student: ").lower()
+        selected_subject = input("Please enter the student's subject: ").lower()
+        credit = int(input("Please enter the number of classes: "))
+        for i in input_teacher.students:
+            # confirms the student and the subject
+            if i.name.lower() == selected_student and i.subject.lower() == selected_subject:
+                print(f"You want to add {credit} classes to {i.name} ({i.subject})")
+                confirm_student = input("Confirm (y/n): ")
+                if confirm_student == "y":
+                    confirmed_student = i
+    workbook[workbook.sheetnames[-2]].cell(row=confirmed_student.row_num, column=5).value += credit
+    workbook[workbook.sheetnames[-2]].cell(row=confirmed_student.row_num, column=6).value += credit
+    workbook.save(filename="Student Info.xlsx")
+
 
 def operation(teacher_dict):
     # main loop asking for inputs
@@ -170,16 +245,19 @@ def operation(teacher_dict):
         1. Finished Class\n
         2. Add Credit\n
         3. Report Status\n
+        4. New Month\n
         quit: exit program''')
         print("--------------------------------------------")
-        choice = input("Choice: ")
+        choice = int(input("Choice: ").strip(" "))
         if choice == "quit":
             break
         else:
-            print(f"You choosed: {choice}")
+            print(f"You chose: {choice}")
             print("--------------------------------------------")
-            choice_dictionary = {"1": finished_class(teacher_dict, teacher)}
-            choice_dictionary[choice]
+            choice_dictionary = {1: "finished_class(teacher_dict, teacher)",
+                                 2: "add_classes(teacher_dict, teacher)",
+                                 4: "new_month(workbook)"}
+            exec(choice_dictionary[choice])
             print("--------------------------------------------")
             print_teachers(teacher_dict, teacher.name)
 
@@ -187,10 +265,10 @@ def operation(teacher_dict):
 # initialize everything
 print("--------------------------------------------")
 print("Initializing...")
-curr_sheet = workbook[workbook.sheetnames[-2]]
 Teacher_Dict, color_to_teacher = init_teachers(curr_sheet)
 assign_students(curr_sheet, color_to_teacher)
 print("Initialization complete!")
+print(f"Current month: {month_ref[curr_month-1]}")
 print("--------------------------------------------")
 # print_teachers(Teacher_Dict, "all")
 
